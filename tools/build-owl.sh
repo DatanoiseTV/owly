@@ -19,6 +19,9 @@
 #                           no ACK expected and so no retries
 #   owl-06-fixed-radio-pin.patch  with -F, -S pin pins -c's channel, not the
 #                           peer's favourite
+#   owl-08-amsdu-bound.patch  refuse an A-MSDU with more subframes than the
+#                           receive array has slots, instead of writing past
+#                           it (tests/owl_amsdu.c)
 # Applied in name order: each is a diff against the tree with the previous ones.
 set -eu
 

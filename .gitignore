@@ -11,5 +11,6 @@
 /pkg/
 /*.pkg.tar.*
 /*.deb
+ __pycache__
 
 owl-test-*
