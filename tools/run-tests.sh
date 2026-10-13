@@ -3,7 +3,7 @@
 #   tools/run-tests.sh                the bats tests in tests/unit, then the
 #                                     Python tests in tests/
 #   tools/run-tests.sh <file.bats>... only those bats files
-# tests/test_owl_amsdu.py skips until tools/build-owl.sh has patched OWL.
+# tests/test_owl_*.py skip until tools/build-owl.sh has patched OWL.
 # Deliberately not wired into PKGBUILD check() or the RPM %check: these run at
 # development and CI time, not at package build time.
 set -eu

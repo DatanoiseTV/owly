@@ -36,12 +36,12 @@ jobs:
         run: tools/build-rpm.sh
       - name: Check the rpm against the PKGBUILD
         run: tools/check-rpm.sh omdrop-owl-*.rpm
-      - name: OWL A-MSDU test
+      - name: OWL patch tests
         # Here, not in the test job: it needs the OWL tree build-rpm.sh just
         # patched, and a skip would hide that it didn't run.
         run: |
-          python3 -m unittest -v tests/test_owl_amsdu.py 2> amsdu.log || { cat amsdu.log; exit 1; }
-          cat amsdu.log
-          ! grep -q skipped amsdu.log
+          python3 -m unittest -v tests/test_owl_amsdu.py tests/test_owl_padding.py 2> owl.log || { cat owl.log; exit 1; }
+          cat owl.log
+          ! grep -q skipped owl.log
       - name: rpmlint (informational)
         run: rpmlint omdrop-owl-*.rpm || true
