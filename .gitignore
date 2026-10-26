@@ -13,3 +13,7 @@ other-libs
 /target/
 
 .readme-preview.html
+
+# Local work notes.
+/TODO.md
+/STRUCTURE.md
