@@ -16,15 +16,23 @@ fn git(manifest: &Path, args: &[&str]) -> Option<String> {
 
 fn main() {
     let manifest = std::path::PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
-    let branch = git(&manifest, &["branch", "--show-current"])
+    let branch = std::env::var("OWLY_BUILD_BRANCH")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .or_else(|| git(&manifest, &["branch", "--show-current"]))
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| "detached".into());
-    let hash = git(&manifest, &["rev-parse", "--short=12", "HEAD"])
+    let hash = std::env::var("OWLY_BUILD_COMMIT")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .or_else(|| git(&manifest, &["rev-parse", "--short=12", "HEAD"]))
         .unwrap_or_else(|| "unknown".into());
     let version = std::env::var("CARGO_PKG_VERSION").unwrap();
     println!("cargo:rustc-env=OWLY_BUILD_ID={version} ({branch} {hash})");
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=../../build-info.rs");
+    println!("cargo:rerun-if-env-changed=OWLY_BUILD_BRANCH");
+    println!("cargo:rerun-if-env-changed=OWLY_BUILD_COMMIT");
     if let Some(head) = git(&manifest, &["rev-parse", "--git-path", "HEAD"]) {
         println!("cargo:rerun-if-changed={head}");
     }
