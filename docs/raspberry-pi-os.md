@@ -42,7 +42,7 @@ sudo reboot
 After reconnecting, repeat the checks above, then run:
 
 ```sh
-sudo apt install git build-essential raspberrypi-kernel-headers libgmp3-dev \
+sudo apt install git build-essential linux-headers-rpi-2712 libgmp3-dev \
   gawk qpdf bison flex make autoconf libtool texinfo zlib1g-dev \
   libssl-dev iw tcpdump
 test -d "/lib/modules/$(uname -r)/build"
@@ -140,10 +140,12 @@ station = "wlan0"
 allow_untested = true
 ```
 
-Then run `owly doctor`; it must report `firmware-monitor` and a permitted
-social channel. Run `owly radio up` before `owly receive --dir ~/Downloads`
-or `owly send`. Record both transfer directions with `owly test-card`. Owly
-releases the onboard Wi-Fi connection while its radio session runs.
+Connect `wlan0` to an access point on channel 6, 44, or 149. Then run
+`owly doctor`; it must report `firmware-monitor-shared` and that channel.
+Run `owly radio up` before `owly receive --dir ~/Downloads` or `owly send`.
+Record both transfer directions with `owly test-card`. Owly keeps the station
+connected in this mode. Concurrent Wi-Fi throughput and AirDrop transfers
+still need to be measured on a physical Pi; keep Ethernet ready for recovery.
 
 ## Restore stock Wi-Fi
 

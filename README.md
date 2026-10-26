@@ -143,7 +143,7 @@ One card name can cover chips that behave differently, so a report from a machin
 
 ### Raspberry Pi onboard Wi-Fi with Nexmon
 
-The experimental `firmware-monitor` mode uses a Nexmon-patched `brcmfmac` driver and firmware. Stock Raspberry Pi firmware does not expose the monitor capture and frame injection this radio path uses. [Kali's Raspberry Pi Nexmon packages](https://www.kali.org/blog/raspberry-pi-wi-fi-glow-up/) have been tested for monitor mode and injection on these boards:
+The experimental `firmware-monitor-shared` mode uses a Nexmon-patched `brcmfmac` driver and firmware. It keeps the station connected and runs AWDL on its access point's channel. Stock Raspberry Pi firmware does not expose the monitor capture and frame injection this radio path uses. [Kali's Raspberry Pi Nexmon packages](https://www.kali.org/blog/raspberry-pi-wi-fi-glow-up/) have been tested for monitor mode and injection on these boards:
 
 | Board | Onboard Wi-Fi | Nexmon prerequisite |
 |---|---|---|
@@ -173,9 +173,9 @@ allow_untested = true
 channels = [44, 149, 6]
 ```
 
-Use the interface name shown by `iw dev` if it differs from `wlan0`. Run `owly doctor` first: it must report `firmware-monitor` and a usable channel. Then run `owly radio up`, and use `owly receive` or `owly send` in another terminal. This mode takes the onboard Wi-Fi off its network for the session; use Ethernet for remote access. Keep `owlymon0` free for Owly rather than creating it with `airmon-ng` first. `owly test-card` records whether discovery and transfers work in both directions. A monitor interface and a successful injection self-test alone do not establish AirDrop compatibility.
+Use the interface name shown by `iw dev` if it differs from `wlan0`. Connect the Pi to an access point on channel 6, 44, or 149; shared mode cannot retune a connected station to another channel. Run `owly doctor` first: it must report `firmware-monitor-shared` and the access point's social channel. Then run `owly radio up`, and use `owly receive` or `owly send` in another terminal. Owly leaves the onboard Wi-Fi connection up in this mode, but throughput and coexistence still need physical testing. Keep Ethernet available during initial tests. Keep `owlymon0` free for Owly rather than creating it with `airmon-ng` first. `owly test-card` records whether discovery and transfers work in both directions. A monitor interface and a successful injection self-test alone do not establish AirDrop compatibility.
 
-For a different Raspberry Pi radio implementation, `owly-awdl` provides the portable AWDL frame and scheduling logic, `owly-radio` owns the Linux monitor/TAP path and recovery journal, and `owly-airdrop` handles discovery and transfers above `awdl0`. The `firmware-monitor` setup is in `crates/owly-radio/src/injection/setup.rs`; driver policy is in `crates/owly-radio/drivers.toml`. A new radio backend can implement `owly_radio::radio::Backend` without changing the AirDrop protocol code.
+For a different Raspberry Pi radio implementation, `owly-awdl` provides the portable AWDL frame and scheduling logic, `owly-radio` owns the Linux monitor/TAP path and recovery journal, and `owly-airdrop` handles discovery and transfers above `awdl0`. The shared firmware monitor setup is in `crates/owly-radio/src/injection/setup.rs`; driver policy is in `crates/owly-radio/drivers.toml`. A new radio backend can implement `owly_radio::radio::Backend` without changing the AirDrop protocol code.
 
 ### Checking your card
 

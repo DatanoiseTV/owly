@@ -21,6 +21,8 @@
 #                down, with an active monitor in its place, for cards with
 #                neither. "firmware-monitor": Wi-Fi is down, with capture
 #                and injection on a firmware-backed monitor interface
+#                "firmware-monitor-shared": a firmware-backed monitor beside
+#                the connected station, fixed to the AP's social channel
 #   reconnect_after_monitor
 #                force a reconnect after deleting the monitor interface, for
 #                drivers whose station stops receiving after that (default
