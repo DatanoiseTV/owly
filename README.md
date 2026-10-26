@@ -163,7 +163,7 @@ sudo apt install brcmfmac-nexmon-dkms firmware-nexmon
 sudo reboot
 ```
 
-On stock Raspberry Pi OS (formerly Raspbian), install Owly from source and use a compatible USB Wi-Fi adapter, or install a Nexmon driver and firmware built for that board's exact kernel and Wi-Fi chip before selecting the onboard radio. The stock onboard firmware cannot run `firmware-monitor`. See the [Raspberry Pi OS installation guide](docs/raspberry-pi-os.md) for the commands and verification steps. Do not add Kali package repositories to Raspberry Pi OS to get the Nexmon packages; their kernel modules and firmware are matched to Kali's images.
+On stock Raspberry Pi OS (formerly Raspbian), the [onboard Wi-Fi installation guide](docs/raspberry-pi-os.md) gives source build, install, verification, and rollback commands for a Pi 5 or wireless CM5 on 64-bit Trixie with kernel 6.18 and CYW43455 firmware 7.45.265. This uses a [still-open Nexmon monitor/injection port](https://github.com/seemoo-lab/nexmon/pull/692), so it remains experimental until tested on the boards. Other kernels, firmware versions, and Pi models require their own matching Nexmon build. Do not add Kali package repositories to Raspberry Pi OS; their kernel modules and firmware are matched to Kali's images.
 
 Build and install Owly on the Pi from this checkout using the [source instructions](#from-source). For the onboard radio, set `/etc/owly/radio.toml` to:
 
