@@ -141,11 +141,21 @@ Make sure you set your phone's Airdrop setting to "Everyone for 10 minutes".
 
 One card name can cover chips that behave differently, so a report from a machine, PCI ID (`lspci -nn`) or kernel not listed here helps too.
 
-### Raspberry Pi 5 and Compute Module 5
+### Raspberry Pi onboard Wi-Fi with Nexmon
 
-The onboard CYW43455 on Raspberry Pi 5 and wireless CM5 modules can be tried through the experimental `firmware-monitor` mode. It needs a Nexmon-patched `brcmfmac` driver and firmware: stock firmware does not expose the monitor capture and frame injection this radio path uses. [Kali's Raspberry Pi Nexmon packages](https://www.kali.org/blog/raspberry-pi-wi-fi-glow-up/) provide those capabilities on Pi 5; the CM5 AirDrop path has not yet been tested on hardware. CM5 modules without wireless need a separate compatible Wi-Fi card.
+The experimental `firmware-monitor` mode uses a Nexmon-patched `brcmfmac` driver and firmware. Stock Raspberry Pi firmware does not expose the monitor capture and frame injection this radio path uses. [Kali's Raspberry Pi Nexmon packages](https://www.kali.org/blog/raspberry-pi-wi-fi-glow-up/) have been tested for monitor mode and injection on these boards:
 
-On a 64-bit Kali Raspberry Pi image, install the patched driver and firmware, then reboot:
+| Board | Onboard Wi-Fi | Nexmon prerequisite |
+|---|---|---|
+| Raspberry Pi 5 | CYW43455 | Kali 64-bit Pi image |
+| Raspberry Pi 4 | CYW43455 | Kali 32-bit or 64-bit Pi image |
+| Raspberry Pi 3B | CYW43430 | Kali 32-bit or 64-bit Pi image |
+| Raspberry Pi Zero 2 W | BCM43436s variant | Kali Pi image with matching firmware |
+| Raspberry Pi Zero W | BCM43430 | Kali Pi image with matching firmware |
+
+A wireless CM5 has a CYW43455 and can use the same mode, but it is not in Kali's tested board list. A CM5 without wireless needs another compatible Wi-Fi card. Owly has no completed AirDrop hardware report for any of these onboard radios yet. The table records Nexmon prerequisites, not verified AirDrop support.
+
+On a supported Kali Raspberry Pi image, install the patched driver and firmware, then reboot:
 
 ```sh
 sudo apt update
@@ -162,6 +172,8 @@ channels = [44, 149, 6]
 ```
 
 Use the interface name shown by `iw dev` if it differs from `wlan0`. Run `owly doctor` first: it must report `firmware-monitor` and a usable channel. Then run `owly radio up`, and use `owly receive` or `owly send` in another terminal. This mode takes the onboard Wi-Fi off its network for the session; use Ethernet for remote access. Keep `owlymon0` free for Owly rather than creating it with `airmon-ng` first. `owly test-card` records whether discovery and transfers work in both directions. A monitor interface and a successful injection self-test alone do not establish AirDrop compatibility.
+
+For a different Raspberry Pi radio implementation, `owly-awdl` provides the portable AWDL frame and scheduling logic, `owly-radio` owns the Linux monitor/TAP path and recovery journal, and `owly-airdrop` handles discovery and transfers above `awdl0`. The `firmware-monitor` setup is in `crates/owly-radio/src/injection/setup.rs`; driver policy is in `crates/owly-radio/drivers.toml`. A new radio backend can implement `owly_radio::radio::Backend` without changing the AirDrop protocol code.
 
 ### Checking your card
 

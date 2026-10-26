@@ -19,7 +19,8 @@
 #                an ad-hoc cell on AWDL's BSSID in its place, or a hidden AP
 #                on a card with no ad-hoc mode. "active-monitor": Wi-Fi is
 #                down, with an active monitor in its place, for cards with
-#                neither
+#                neither. "firmware-monitor": Wi-Fi is down, with capture
+#                and injection on a firmware-backed monitor interface
 #   reconnect_after_monitor
 #                force a reconnect after deleting the monitor interface, for
 #                drivers whose station stops receiving after that (default
@@ -190,7 +191,7 @@ channels = [44, 149, 6]
 issues = [
     "The stock brcmfmac firmware cannot inject AWDL frames. This mode needs a compatible Nexmon-patched driver and firmware, and has not passed an AirDrop transfer on Raspberry Pi 5 or CM5 yet.",
 ]
-notes = "CYW43455 onboard Wi-Fi on Raspberry Pi 5 and wireless CM5. Opt-in only. Nexmon provides a firmware-backed monitor interface with injection; capture, injection and two-way AirDrop still need device testing."
+notes = "Nexmon-capable onboard Wi-Fi on Raspberry Pi 5, Pi 4, Pi 3B, Zero 2 W, Zero W and wireless CM5. Opt-in only. The patched driver and matching firmware must expose a monitor interface with injection; two-way AirDrop still needs board-specific testing."
 
 [drivers."*"]
 status = "untested"

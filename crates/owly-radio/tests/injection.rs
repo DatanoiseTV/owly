@@ -49,6 +49,7 @@ struct FakeOps {
     /// The card refuses an ad-hoc interface beside its station.
     ibss_refused: bool,
     fail_monitor: bool,
+    monitor_mac_locked: bool,
     /// UFW is on.
     ufw: bool,
     /// NetworkManager reconnects by itself once it has the station back.
@@ -110,6 +111,7 @@ impl FakeOps {
             ibss_starts: vec![2437, 5220, 5745],
             ibss_refused: false,
             fail_monitor: false,
+            monitor_mac_locked: false,
             ufw: false,
             autoconnect: true,
             managed: Mutex::new(BTreeMap::new()),
@@ -230,7 +232,11 @@ impl Ops for FakeOps {
             name.into(),
             Iface {
                 kind: kind_name(kind).into(),
-                mac: "02:00:00:00:00:99".parse().unwrap(),
+                mac: if self.monitor_mac_locked && matches!(kind, Kind::Monitor { .. }) {
+                    STATION_MAC.parse().unwrap()
+                } else {
+                    "02:00:00:00:00:99".parse().unwrap()
+                },
                 freq: None,
             },
         );
@@ -257,6 +263,9 @@ impl Ops for FakeOps {
     }
     fn set_mac(&self, iface: &str, mac: MacAddr) -> io::Result<()> {
         self.call(format!("mac {iface} {mac}"));
+        if iface == MONITOR && self.monitor_mac_locked {
+            return Err(io::Error::other("EOPNOTSUPP"));
+        }
         self.ifaces.lock().unwrap().get_mut(iface).unwrap().mac = mac;
         Ok(())
     }
@@ -619,6 +628,20 @@ async fn firmware_monitor_uses_one_fixed_channel_and_restores_station() {
         ]
     );
     assert_eq!(fx.journal(), None);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn firmware_monitor_accepts_an_inherited_station_mac() {
+    let fx = Fx::with(|o| {
+        o.driver = "brcmfmac".into();
+        o.monitor_mac_locked = true;
+    });
+    let mut settings = fx.settings();
+    settings.allow_untested = true;
+    let mut backend = fx.backend_with(settings);
+    let link = backend.up().await.unwrap();
+    assert_eq!(link.mac, STATION_MAC.parse().unwrap());
+    backend.down().await.unwrap();
 }
 
 #[test]

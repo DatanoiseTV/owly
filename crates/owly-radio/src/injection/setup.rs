@@ -252,8 +252,14 @@ impl Setup<'_> {
             )));
         }
         ops.set_managed(MONITOR, false);
-        ops.set_mac(MONITOR, mac)
-            .and_then(|()| ops.set_up(MONITOR, true))
+        if let Err(e) = ops.set_mac(MONITOR, mac)
+            && ops.mac(MONITOR) != Some(mac)
+        {
+            return Err(Error::no_radio(format!(
+                "Couldn't give the monitor interface the station's MAC address: {e}"
+            )));
+        }
+        ops.set_up(MONITOR, true)
             .map_err(|e| Error::no_radio(format!("Couldn't bring up the monitor interface: {e}")))
     }
 
