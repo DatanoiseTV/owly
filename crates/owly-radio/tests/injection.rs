@@ -50,6 +50,7 @@ struct FakeOps {
     ibss_refused: bool,
     fail_monitor: bool,
     monitor_mac_locked: bool,
+    fail_monitor_tune: bool,
     /// UFW is on.
     ufw: bool,
     /// NetworkManager reconnects by itself once it has the station back.
@@ -112,6 +113,7 @@ impl FakeOps {
             ibss_refused: false,
             fail_monitor: false,
             monitor_mac_locked: false,
+            fail_monitor_tune: false,
             ufw: false,
             autoconnect: true,
             managed: Mutex::new(BTreeMap::new()),
@@ -278,6 +280,9 @@ impl Ops for FakeOps {
     }
     fn set_freq(&self, iface: &str, freq: u32) -> io::Result<()> {
         self.call(format!("freq {iface} {freq}"));
+        if iface == MONITOR && self.fail_monitor_tune {
+            return Err(io::Error::other("EINVAL"));
+        }
         let mut ifaces = self.ifaces.lock().unwrap();
         let i = ifaces
             .get_mut(iface)
@@ -642,6 +647,22 @@ async fn firmware_monitor_accepts_an_inherited_station_mac() {
     let link = backend.up().await.unwrap();
     assert_eq!(link.mac, STATION_MAC.parse().unwrap());
     backend.down().await.unwrap();
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn firmware_monitor_restores_wifi_when_no_channel_can_be_tuned() {
+    let fx = Fx::with(|o| {
+        o.driver = "brcmfmac".into();
+        o.fail_monitor_tune = true;
+    });
+    let mut settings = fx.settings();
+    settings.allow_untested = true;
+    let mut backend = fx.backend_with(settings);
+    let error = backend.up().await.err().expect("channel tuning must fail");
+    assert!(error.to_string().contains("firmware monitor"), "{error}");
+    assert!(!fx.ops.exists(MONITOR));
+    assert_eq!(fx.ops.kind(STATION).as_deref(), Some("managed"));
+    assert_eq!(fx.journal(), None);
 }
 
 #[test]
