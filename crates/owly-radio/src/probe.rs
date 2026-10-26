@@ -265,7 +265,7 @@ pub fn capabilities(ops: &dyn Ops, settings: &Settings) -> Capabilities {
                 None => caps.missing.push(missing("radio", wrong_channel(f))),
             },
         },
-        Mode::Exclusive | Mode::ActiveMonitor => {
+        Mode::Exclusive | Mode::ActiveMonitor | Mode::FirmwareMonitor => {
             let freqs = station.tx_channels(settings);
             caps.channel = freqs.first().and_then(|f| social_channel(*f));
             if caps.channel == Some(6) {
@@ -307,6 +307,10 @@ fn mode_problem(station: &Station, settings: &Settings, card: &Card) -> Option<M
         Mode::ActiveMonitor if !card.active_monitor => Some(missing(
             "hardware",
             "This Wi-Fi card's quirks ask for active-monitor mode, but the card doesn't support an active monitor.",
+        )),
+        Mode::FirmwareMonitor if !station.has(IfType::Monitor) => Some(missing(
+            "hardware",
+            "This Wi-Fi driver doesn't expose a monitor interface. On a Raspberry Pi 5 or wireless CM5, install a compatible Nexmon-patched firmware and brcmfmac driver before using the onboard radio.",
         )),
         _ => None,
     }

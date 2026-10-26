@@ -2,7 +2,7 @@
 
 https://github.com/user-attachments/assets/b195ce4c-e078-49be-bc13-44a72b6dc189
 
-AirDrop between iPhones and Linux devices whose Wi-Fi isn't Apple's Broadcom chip.
+AirDrop between iPhones and Linux devices with a radio that can capture and inject AWDL frames.
 
 See [supported hardware](#supported-hardware).
 
@@ -140,6 +140,28 @@ Make sure you set your phone's Airdrop setting to "Everyone for 10 minutes".
 <!-- hardware-table:end -->
 
 One card name can cover chips that behave differently, so a report from a machine, PCI ID (`lspci -nn`) or kernel not listed here helps too.
+
+### Raspberry Pi 5 and Compute Module 5
+
+The onboard CYW43455 on Raspberry Pi 5 and wireless CM5 modules can be tried through the experimental `firmware-monitor` mode. It needs a Nexmon-patched `brcmfmac` driver and firmware: stock firmware does not expose the monitor capture and frame injection this radio path uses. [Kali's Raspberry Pi Nexmon packages](https://www.kali.org/blog/raspberry-pi-wi-fi-glow-up/) provide those capabilities on Pi 5; the CM5 AirDrop path has not yet been tested on hardware. CM5 modules without wireless need a separate compatible Wi-Fi card.
+
+On a 64-bit Kali Raspberry Pi image, install the patched driver and firmware, then reboot:
+
+```sh
+sudo apt update
+sudo apt install brcmfmac-nexmon-dkms firmware-nexmon
+sudo reboot
+```
+
+Build and install Owly on the Pi from this checkout using the [source instructions](#from-source). For the onboard radio, set `/etc/owly/radio.toml` to:
+
+```toml
+station = "wlan0"
+allow_untested = true
+channels = [44, 149, 6]
+```
+
+Use the interface name shown by `iw dev` if it differs from `wlan0`. Run `owly doctor` first: it must report `firmware-monitor` and a usable channel. Then run `owly radio up`, and use `owly receive` or `owly send` in another terminal. This mode takes the onboard Wi-Fi off its network for the session; use Ethernet for remote access. Keep `owlymon0` free for Owly rather than creating it with `airmon-ng` first. `owly test-card` records whether discovery and transfers work in both directions. A monitor interface and a successful injection self-test alone do not establish AirDrop compatibility.
 
 ### Checking your card
 

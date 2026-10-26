@@ -1,9 +1,10 @@
 # owly-radio
 
-AWDL, the Wi-Fi link AirDrop runs over, on ordinary Linux Wi-Fi cards, without Apple's Broadcom chip. It's the radio under [Owly](https://github.com/t4t5/owly), and runs [owly-awdl](https://crates.io/crates/owly-awdl) over nl80211. Linux only.
+AWDL, the Wi-Fi link AirDrop runs over, on Linux Wi-Fi cards that expose capture and injection. It's the radio under [Owly](https://github.com/t4t5/owly), and runs [owly-awdl](https://crates.io/crates/owly-awdl) over nl80211. Linux only.
 
 - `radio::Backend` is the trait a radio service runs: `up` brings the link up (an `awdl0` interface with an IPv6 link-local address, and the AWDL peers heard on it), `down` gives Wi-Fi back, and `recover` undoes what a session left behind when its process died, from a journal.
 - `injection::Injection` implements it with owly-awdl, on a monitor interface and a TAP `awdl0`, in the mode the card needs: shared, which keeps Wi-Fi connected; exclusive, with an ad-hoc cell or a hidden AP in the station's place; or active monitor.
+- `firmware-monitor` is the opt-in fixed-channel path for patched FullMAC firmware such as Nexmon on Raspberry Pi 5 and wireless CM5. It uses a passive monitor netdev for capture and injection and restores the station after the session. Two-way AirDrop transfers on these boards still need hardware testing.
 - `probe` finds what the card can do, without root. `quirks` holds what the probe can't detect, per driver: the `drivers.toml` packaged with the crate, with `/etc/owly/drivers.toml` read over it. `config` reads `/etc/owly/radio.toml`.
 - `fake` is a backend for testing what runs on top.
 

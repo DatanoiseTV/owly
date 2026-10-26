@@ -46,7 +46,7 @@ pub(crate) fn prepare(
     };
     let result = match s.station.quirk.mode {
         Mode::Shared => s.shared(),
-        Mode::Exclusive | Mode::ActiveMonitor => s.exclusive(),
+        Mode::Exclusive | Mode::ActiveMonitor | Mode::FirmwareMonitor => s.exclusive(),
     };
     result.inspect_err(|_| {
         if let Err(stuck) = s.journal.undo(ops) {
@@ -166,6 +166,8 @@ impl Setup<'_> {
         let mut hostapd = None;
         let freq = if mode == Mode::ActiveMonitor {
             self.active_monitor(sta_mac, &freqs)?
+        } else if mode == Mode::FirmwareMonitor {
+            self.firmware_monitor(sta_mac, &freqs)?
         } else {
             let freq = if self.station.has(IfType::Adhoc) {
                 self.ibss_cell(sta_mac, &freqs)?
@@ -461,6 +463,22 @@ impl Setup<'_> {
         }
         Err(Error::no_radio(
             "Couldn't tune the active monitor to any of AirDrop's channels.",
+        ))
+    }
+
+    /// Nexmon's firmware supplies capture and injection through an ordinary
+    /// monitor netdev. It has no mac80211 cell or active-monitor interface,
+    /// so keep the station down and tune the monitor itself.
+    fn firmware_monitor(&mut self, mac: MacAddr, freqs: &[u32]) -> Result<u32, Error> {
+        self.monitor(Kind::Monitor { active: false }, mac)?;
+        for &freq in freqs {
+            match self.ops.set_freq(MONITOR, freq) {
+                Ok(()) => return Ok(freq),
+                Err(e) => tracing::info!("the firmware monitor can't tune to {freq} MHz: {e}"),
+            }
+        }
+        Err(Error::no_radio(
+            "Couldn't tune the firmware monitor to any of AirDrop's channels.",
         ))
     }
 

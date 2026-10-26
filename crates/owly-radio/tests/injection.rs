@@ -539,6 +539,7 @@ fn probe_explains_what_stands_in_the_way() {
     settings.allow_untested = true;
     let caps = fx.backend_with(settings).probe();
     assert!(caps.hardware, "{caps:?}");
+    assert_eq!(caps.mode, Some(Mode::FirmwareMonitor));
 
     // The MT7927, on the MT7925's driver, is known not to work.
     let fx = Fx::with(|o| o.device = Some("14c3:7927".into()));
@@ -557,6 +558,67 @@ fn probe_explains_what_stands_in_the_way() {
         caps.missing[0].say.contains("no Wi-Fi interface"),
         "{caps:?}"
     );
+}
+
+#[test]
+fn firmware_monitor_requires_patched_driver_capabilities() {
+    let fx = Fx::with(|o| {
+        o.driver = "brcmfmac".into();
+        o.wiphy
+            .lock()
+            .unwrap()
+            .iftypes
+            .retain(|t| *t != IfType::Monitor);
+    });
+    let mut settings = fx.settings();
+    settings.allow_untested = true;
+    let caps = fx.backend_with(settings).probe();
+    assert_eq!(caps.missing[0].id, "hardware");
+    assert!(caps.missing[0].say.contains("Nexmon"), "{caps:?}");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn firmware_monitor_uses_one_fixed_channel_and_restores_station() {
+    let fx = Fx::with(|o| {
+        o.driver = "brcmfmac".into();
+        o.wiphy
+            .lock()
+            .unwrap()
+            .iftypes
+            .retain(|t| *t != IfType::Adhoc && *t != IfType::Ap);
+    });
+    let mut settings = fx.settings();
+    settings.allow_untested = true;
+    let mut backend = fx.backend_with(settings);
+    assert_eq!(backend.probe().missing, []);
+    let link = backend.up().await.unwrap();
+    assert_eq!(link.mac, STATION_MAC.parse().unwrap());
+    assert_eq!(link.announce, Some(Announce::FIXED));
+    assert_eq!(fx.awdl().radio.channel.0, 44);
+    assert_eq!(fx.awdl().radio.presence, Presence::Fixed);
+    let calls = fx.ops.calls();
+    assert_eq!(
+        calls,
+        [
+            format!("managed {STATION} false"),
+            format!("down {STATION}"),
+            format!("add phy0 {MONITOR} monitor"),
+            format!("mac {MONITOR} {STATION_MAC}"),
+            format!("up {MONITOR}"),
+            format!("freq {MONITOR} 5220"),
+        ]
+    );
+    backend.down().await.unwrap();
+    assert_eq!(
+        fx.since(calls.len()),
+        [
+            format!("down {MONITOR}"),
+            format!("del {MONITOR}"),
+            format!("up {STATION}"),
+            format!("managed {STATION} true"),
+        ]
+    );
+    assert_eq!(fx.journal(), None);
 }
 
 #[test]
