@@ -186,10 +186,10 @@ notes = "Qualcomm WCN7850 (FastConnect 7800, 17cb:1107, Fedora 44, kernel 7.2.9)
 
 [drivers.brcmfmac]
 status = "untested"
-mode = "firmware-monitor"
+mode = "firmware-monitor-shared"
 channels = [44, 149, 6]
 issues = [
-    "The stock brcmfmac firmware cannot inject AWDL frames. This mode needs a compatible Nexmon-patched driver and firmware, and has not passed an AirDrop transfer on Raspberry Pi 5 or CM5 yet.",
+    "The stock brcmfmac firmware cannot inject AWDL frames. Shared mode needs a matching Nexmon driver and firmware, a Wi-Fi connection on channel 6, 44, or 149, and hardware validation.",
 ]
 notes = "Nexmon-capable onboard Wi-Fi on Raspberry Pi 5, Pi 4, Pi 3B, Zero 2 W, Zero W and wireless CM5. Opt-in only. The patched driver and matching firmware must expose a monitor interface with injection; two-way AirDrop still needs board-specific testing."
 

@@ -45,7 +45,7 @@ pub(crate) fn prepare(
         station,
     };
     let result = match s.station.quirk.mode {
-        Mode::Shared => s.shared(),
+        Mode::Shared | Mode::FirmwareMonitorShared => s.shared(),
         Mode::Exclusive | Mode::ActiveMonitor | Mode::FirmwareMonitor => s.exclusive(),
     };
     result.inspect_err(|_| {
@@ -126,7 +126,13 @@ impl Setup<'_> {
             channel: Channel(channel),
             presence: Presence::Share,
         };
-        Ok(self.finish(Mode::Shared, radio, sta_mac, Announce::SHARED, None))
+        Ok(self.finish(
+            self.station.quirk.mode,
+            radio,
+            sta_mac,
+            Announce::SHARED,
+            None,
+        ))
     }
 
     /// Exclusive and active-monitor modes: the station off the air, and

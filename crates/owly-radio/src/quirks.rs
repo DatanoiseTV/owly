@@ -69,6 +69,8 @@ pub enum Mode {
     /// Firmware-backed monitor injection on one fixed channel, without a
     /// mac80211 ad-hoc cell or active-monitor ACKs.
     FirmwareMonitor,
+    /// Firmware-backed monitor injection beside an associated station.
+    FirmwareMonitorShared,
 }
 
 impl fmt::Display for Mode {
@@ -78,6 +80,7 @@ impl fmt::Display for Mode {
             Mode::Exclusive => "exclusive",
             Mode::ActiveMonitor => "active-monitor",
             Mode::FirmwareMonitor => "firmware-monitor",
+            Mode::FirmwareMonitorShared => "firmware-monitor-shared",
         })
     }
 }
@@ -184,7 +187,7 @@ mod tests {
         let (q, source) = quirks.get("brcmfmac", None);
         assert_eq!(source, Source::Driver);
         assert_eq!(q.status, Status::Untested);
-        assert_eq!(q.mode, Mode::FirmwareMonitor);
+        assert_eq!(q.mode, Mode::FirmwareMonitorShared);
     }
 
     #[test]

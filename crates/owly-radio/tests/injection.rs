@@ -507,6 +507,19 @@ fn mt7612u(o: &mut FakeOps) {
     w.iftypes.retain(|t| *t != IfType::Adhoc);
 }
 
+fn firmware_exclusive_settings(fx: &Fx) -> Settings {
+    let path = fx.dir.path().join("drivers.toml");
+    std::fs::write(
+        &path,
+        "[drivers.brcmfmac]\nstatus = \"untested\"\nmode = \"firmware-monitor\"\n",
+    )
+    .unwrap();
+    let mut settings = fx.settings();
+    settings.allow_untested = true;
+    settings.quirks = Quirks::load(&path).unwrap();
+    settings
+}
+
 #[test]
 fn probe_finds_the_mt7925_ready() {
     let fx = Fx::new();
@@ -553,7 +566,7 @@ fn probe_explains_what_stands_in_the_way() {
     settings.allow_untested = true;
     let caps = fx.backend_with(settings).probe();
     assert!(caps.hardware, "{caps:?}");
-    assert_eq!(caps.mode, Some(Mode::FirmwareMonitor));
+    assert_eq!(caps.mode, Some(Mode::FirmwareMonitorShared));
 
     // The MT7927, on the MT7925's driver, is known not to work.
     let fx = Fx::with(|o| o.device = Some("14c3:7927".into()));
@@ -601,9 +614,7 @@ async fn firmware_monitor_uses_one_fixed_channel_and_restores_station() {
             .iftypes
             .retain(|t| *t != IfType::Adhoc && *t != IfType::Ap);
     });
-    let mut settings = fx.settings();
-    settings.allow_untested = true;
-    let mut backend = fx.backend_with(settings);
+    let mut backend = fx.backend_with(firmware_exclusive_settings(&fx));
     assert_eq!(backend.probe().missing, []);
     let link = backend.up().await.unwrap();
     assert_eq!(link.mac, STATION_MAC.parse().unwrap());
@@ -641,9 +652,7 @@ async fn firmware_monitor_accepts_an_inherited_station_mac() {
         o.driver = "brcmfmac".into();
         o.monitor_mac_locked = true;
     });
-    let mut settings = fx.settings();
-    settings.allow_untested = true;
-    let mut backend = fx.backend_with(settings);
+    let mut backend = fx.backend_with(firmware_exclusive_settings(&fx));
     let link = backend.up().await.unwrap();
     assert_eq!(link.mac, STATION_MAC.parse().unwrap());
     backend.down().await.unwrap();
@@ -655,12 +664,34 @@ async fn firmware_monitor_restores_wifi_when_no_channel_can_be_tuned() {
         o.driver = "brcmfmac".into();
         o.fail_monitor_tune = true;
     });
-    let mut settings = fx.settings();
-    settings.allow_untested = true;
-    let mut backend = fx.backend_with(settings);
+    let mut backend = fx.backend_with(firmware_exclusive_settings(&fx));
     let error = backend.up().await.err().expect("channel tuning must fail");
     assert!(error.to_string().contains("firmware monitor"), "{error}");
     assert!(!fx.ops.exists(MONITOR));
+    assert_eq!(fx.ops.kind(STATION).as_deref(), Some("managed"));
+    assert_eq!(fx.journal(), None);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn nexmon_shared_mode_keeps_the_station_connected() {
+    let fx = Fx::with(|o| o.driver = "brcmfmac".into());
+    let mut settings = fx.settings();
+    settings.allow_untested = true;
+    let mut backend = fx.backend_with(settings);
+    assert_eq!(backend.probe().mode, Some(Mode::FirmwareMonitorShared));
+    let link = backend.up().await.unwrap();
+    assert_eq!(link.announce, Some(Announce::SHARED));
+    assert_eq!(fx.awdl().radio.presence, Presence::Share);
+    assert_eq!(fx.awdl().radio.channel.0, 44);
+    let calls = fx.ops.calls();
+    assert!(calls.contains(&format!("add phy0 {MONITOR} monitor")));
+    assert!(!calls.iter().any(|c| c == &format!("down {STATION}")));
+    assert!(
+        !calls
+            .iter()
+            .any(|c| c == &format!("managed {STATION} false"))
+    );
+    backend.down().await.unwrap();
     assert_eq!(fx.ops.kind(STATION).as_deref(), Some("managed"));
     assert_eq!(fx.journal(), None);
 }
