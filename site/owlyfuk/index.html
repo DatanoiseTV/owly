@@ -19,6 +19,8 @@
     <section class="panel" id="download"><div class="section-kicker">01 / THE DROP</div><div class="section-heading"><h2>Packages are baking.<br><span>One tiny rebellion.</span></h2><p>For 64-bit Raspberry Pi OS Trixie, Pi 5 or wireless CM5, and a matching 6.18 kernel and 7.45.265 firmware. Check your system before installing.</p></div><div class="cards"><div class="package"><span class="package-num">01 // RADIO</span><strong>NEXMON DRIVER</strong><span>Patched CYW43455 firmware and a kernel-matched driver build on the Pi.</span><span class="package-link">BUILD IN PROGRESS // CHECK BACK SOON</span></div><div class="package"><span class="package-num">02 // PROTOCOL</span><strong>OWLY FOR PI</strong><span>Owly service, CLI, and shared-mode radio defaults.</span><span class="package-link">BUILD IN PROGRESS // CHECK BACK SOON</span></div></div><div class="terminal"><div class="terminal-head"><span class="term-dots">● ● ●</span> pi@raspberrypi:~ / planned installation sequence</div><pre><code>uname -m &amp;&amp; uname -r
 sudo apt update &amp;&amp; sudo apt full-upgrade
 sudo reboot
+sudo dpkg --add-architecture armhf
+sudo apt update
 sudo apt install ./owly-nexmon-rpi5_0.1-1_arm64.deb ./owly-rpi5_0.4.1-2_arm64.deb
 sudo reboot
 owly doctor</code></pre><button class="copy" type="button">COPY COMMANDS</button></div><p class="install-note">When downloads are available, place both files in the same directory. Read the <a href="https://github.com/DatanoiseTV/owly/blob/feature/rpi-nexmon/docs/raspberry-pi-os.md">full install and recovery guide ↗</a> before replacing radio firmware. Use Ethernet or a local console for the first boot.</p></section>

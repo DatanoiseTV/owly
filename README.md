@@ -143,6 +143,12 @@ One card name can cover chips that behave differently, so a report from a machin
 
 ### Raspberry Pi onboard Wi-Fi with Nexmon
 
+The [Raspberry Pi OS install guide](docs/raspberry-pi-os.md) covers the two
+ARM64 Debian packages and a source build. The [download page](https://lab.syso.codes/owlyfuk/)
+shows package availability. The Nexmon package builds the patched firmware
+locally from the Pi's installed stock image and builds the kernel module for
+the running 6.18 Pi 2712 kernel; it does not contain a modified firmware blob.
+
 The experimental `firmware-monitor-shared` mode uses a Nexmon-patched `brcmfmac` driver and firmware. It keeps the station connected and runs AWDL on its access point's channel. Stock Raspberry Pi firmware does not expose the monitor capture and frame injection this radio path uses. [Kali's Raspberry Pi Nexmon packages](https://www.kali.org/blog/raspberry-pi-wi-fi-glow-up/) have been tested for monitor mode and injection on these boards:
 
 | Board | Onboard Wi-Fi | Nexmon prerequisite |

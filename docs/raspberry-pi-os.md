@@ -1,6 +1,6 @@
 # Raspberry Pi OS: onboard Wi-Fi
 
-This is an experimental source build for a Raspberry Pi 5 or wireless CM5 with
+This is an experimental setup for a Raspberry Pi 5 or wireless CM5 with
 the CYW43455 radio, Raspberry Pi OS Trixie **64-bit**, a **6.18** kernel, and
 firmware **7.45.265 (28bca26 CY)**. The same chip is present on Pi 4, but its
 Owly radio path still needs a board test. No USB Wi-Fi adapter is involved.
@@ -29,7 +29,45 @@ onboard interface. These checks prevent loading a patch made for another
 firmware image or kernel ABI. A wireless CM5 and Pi 5 should expose `wlan0`;
 use the actual interface name if yours differs.
 
-## Build the Nexmon firmware and driver
+## Install the ARM64 packages
+
+The [download page](https://lab.syso.codes/owlyfuk/) provides the packages
+when a build has passed its checks. The Nexmon package contains the patch,
+toolchain, and driver source. It builds the firmware from the Pi's installed
+stock image and the kernel module from the running kernel's headers during
+installation; it does not distribute a patched firmware image. Its stock
+firmware check expects SHA-256
+`d608f866582519c0a28d86db43040f4f1b98dd1d153e72e9752586546b4a36c3`.
+
+Upgrade and reboot before installing, so the running kernel matches the
+headers apt will install. Use Ethernet or a local console for recovery:
+
+```sh
+sudo apt update
+sudo apt full-upgrade
+sudo reboot
+```
+
+Repeat the checks above after reboot. Download both `.deb` files into one
+directory, then enable the ARMHF compatibility runtime used by Nexmon's
+firmware compiler and install them together:
+
+```sh
+sudo dpkg --add-architecture armhf
+sudo apt update
+sudo apt install ./owly-nexmon-rpi5_0.1-1_arm64.deb ./owly-rpi5_0.4.1-2_arm64.deb
+sudo reboot
+modinfo -n brcmfmac
+owly doctor
+```
+
+The module path should contain `updates/owly-nexmon`. The package does not
+interrupt Wi-Fi during installation; the reboot loads the new module and
+firmware. A later kernel update needs a rebuild against its new headers while
+the driver port supports 6.18. Reconfigure the package after reboot with
+`sudo dpkg-reconfigure owly-nexmon-rpi5`, then reboot once more.
+
+## Build from source instead
 
 Install headers for the running kernel and the Nexmon build dependencies:
 
@@ -68,9 +106,13 @@ ln -s "$(readlink -f /usr/lib/arm-linux-gnueabihf/libmpfr.so.6)" \
   buildtools/armhf-compat-libs/libmpfr.so.4
 source setup_env.sh
 "${CC}gcc" --version
-make
+touch DISABLE_STATISTICS
+make -C buildtools/flash_patch_extractor
+make -C firmwares/bcm43455c0/7_45_265-28bca26-CY
 cd patches/bcm43455c0/7_45_265-28bca26-CY/nexmon
-make
+make firmware-only
+make -C "/lib/modules/$(uname -r)/build" \
+  M="$(realpath ../../../driver/brcmfmac_6.18.y-nexmon)" ARCH=arm64 modules
 test -s ../../../driver/brcmfmac_6.18.y-nexmon/brcmfmac.ko
 ```
 
@@ -149,7 +191,15 @@ still need to be measured on a physical Pi; keep Ethernet ready for recovery.
 
 ## Restore stock Wi-Fi
 
-From an Ethernet or local session, remove this kernel's patched module and
+For the Debian packages, remove both packages from an Ethernet or local
+session, then reboot:
+
+```sh
+sudo apt remove owly-rpi5 owly-nexmon-rpi5
+sudo reboot
+```
+
+For the manual source installation, remove this kernel's patched module and
 select the stock firmware alternative, then reboot:
 
 ```sh
