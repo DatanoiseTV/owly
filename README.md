@@ -141,6 +141,12 @@ Make sure you set your phone's Airdrop setting to "Everyone for 10 minutes".
 
 One card name can cover chips that behave differently, so a report from a machine, PCI ID (`lspci -nn`) or kernel not listed here helps too.
 
+ESP32 radios are not supported by the current Linux backends. The
+[ESP32 radio feasibility notes](docs/esp32-radio.md) explain which chips can
+capture and transmit raw frames, why the dual-band C5 is the first useful
+research target, and what a host radio bridge must prove before AirDrop can
+run through it.
+
 ### Checking your card
 
 ```sh
